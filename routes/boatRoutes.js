@@ -27,6 +27,19 @@ router.get('/me', jwtMiddleware, async (req, res) => {
     }
 });
 
+// DOHVAT DETALJA PLOVILA
+router.get('/:id', jwtMiddleware, async (req, res) => {
+    try {
+        const boat = await Boat.findOne({ _id: req.params.id, owner: req.userId });
+        if (!boat) {
+            return res.status(404).send({ error: 'Boat not found' });
+        }
+        res.status(200).send(boat);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
+
 // UREDI OGLAS
 router.patch('/:id', jwtMiddleware, async (req, res) => {
     try {
