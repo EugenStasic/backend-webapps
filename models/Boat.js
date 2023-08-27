@@ -22,6 +22,10 @@ const boatSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    cijenaPlovila: {
+        type: Number,
+        required: true
+    },
     lokacijaPlovila: {
         type: String,
         required: true
@@ -34,7 +38,13 @@ const boatSchema = new mongoose.Schema({
         type: Number,
         min: 1,
         max: 5
-    }]
+    }],
+    dostupnost: [{
+        type: String
+    }],
+    slikePlovila: [{
+        type: String
+    }],
 });
 
 module.exports = mongoose.model('Boat', boatSchema);
