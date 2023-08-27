@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 const userRoutes = require('./routes/userRoutes');
 const boatRoutes = require('./routes/boatRoutes');
+const filterRoutes = require('./routes/filterRoutes');
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use(cookieParser());
 //Rute
 app.use('/users', userRoutes);
 app.use('/boats', boatRoutes);
+app.use('/search', filterRoutes);
 
 const dbUri = process.env.DATABASE_URL;
 
