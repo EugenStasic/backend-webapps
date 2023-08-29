@@ -40,9 +40,9 @@ router.get('/me', jwtMiddleware, async (req, res) => {
 });
 
 // DOHVAT DETALJA PLOVILA
-router.get('/:id', jwtMiddleware, async (req, res) => {
+router.get('/:id', async (req, res) => {
     try {
-        const boat = await Boat.findOne({ _id: req.params.id, owner: req.userId });
+        const boat = await Boat.findOne({ _id: req.params.id });
         if (!boat) {
             return res.status(404).send({ error: 'Boat not found' });
         }
@@ -105,7 +105,7 @@ router.patch('/:id/upload', jwtMiddleware, upload.array('slikePlovila', 5), asyn
 
 
 // DOHVATI SLIKU
-router.get('/slike/+:imageName', (req, res) => {
+router.get('/slike/:imageName', (req, res) => {
     try {
         res.sendFile(path.join(__dirname, '../uploads/' + req.params.imageName));
     } catch (error) {
