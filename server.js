@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const userRoutes = require('./routes/userRoutes');
 const boatRoutes = require('./routes/boatRoutes');
 const filterRoutes = require('./routes/filterRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use(cookieParser());
 app.use('/users', userRoutes);
 app.use('/boats', boatRoutes);
 app.use('/search', filterRoutes);
+app.use('/bookings', bookingRoutes);
 
 const dbUri = process.env.DATABASE_URL;
 

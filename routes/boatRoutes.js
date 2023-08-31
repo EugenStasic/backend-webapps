@@ -113,4 +113,15 @@ router.get('/slike/:imageName', (req, res) => {
     }
 });
 
+// DOSTUPNOST
+router.get('/:id/unavailable-dates', async (req, res) => {
+    try {
+        const boat = await Boat.findById(req.params.id);
+        if (!boat) return res.status(404).send({ error: 'Boat not found' });
+        res.status(200).send(boat.dostupnost);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
+
 module.exports = router;
