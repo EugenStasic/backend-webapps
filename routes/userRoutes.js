@@ -72,4 +72,15 @@ router.get('/checkAuth', jwtMiddleware, (req, res) => {
     res.json({ isAuthenticated: true });
 });
 
+router.get('/user/:id', jwtMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).select('email');
+        if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+        
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'GET User Error.', error: error.message });
+    }
+});
+
 module.exports = router;
