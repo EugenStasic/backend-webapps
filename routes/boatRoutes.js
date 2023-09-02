@@ -18,7 +18,8 @@ router.post('/create', jwtMiddleware, upload.array('slikePlovila', 5), async (re
         const boat = new Boat({
             ...req.body,
             slikePlovila: imagePaths,
-            owner: req.userId
+            owner: req.userId,
+            ownerContact: req.body.ownerContact
         });
 
         await boat.save();
@@ -45,7 +46,19 @@ router.get('/:id', async (req, res) => {
         if (!boat) {
             return res.status(404).send({ error: 'Boat not found' });
         }
-        res.status(200).send(boat);
+        
+        let averageRating = 0;
+        if (boat.ocjene.length > 0) {
+            const sum = boat.ocjene.reduce((a, b) => a + b, 0);
+            averageRating = sum / boat.ocjene.length;
+        }
+
+        const boatWithAverageRating = {
+            ...boat._doc,
+            averageRating
+        };
+
+        res.status(200).send(boatWithAverageRating);
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
@@ -149,6 +162,28 @@ router.get('/slike/:imageName', (req, res) => {
         res.status(500).send({ error: error.message });
     }
 });
+
+// BRISANJE SLIKE
+router.patch('/:id/remove-image/:index', jwtMiddleware, async (req, res) => {
+    try {
+      const boat = await Boat.findOne({ _id: req.params.id, owner: req.userId });
+      if (!boat) {
+        return res.status(404).send({ error: 'Boat not found' });
+      }
+      
+      const index = req.params.index;
+      if (index < 0 || index >= boat.slikePlovila.length) {
+        return res.status(400).send({ error: 'Invalid index' });
+      }
+  
+      boat.slikePlovila.splice(index, 1);
+      await boat.save();
+  
+      res.status(200).send(boat);
+    } catch (error) {
+      res.status(400).send({ error: error.message });
+    }
+  });
 
 // DOSTUPNOST
 router.get('/:id/unavailable-dates', async (req, res) => {

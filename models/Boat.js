@@ -6,6 +6,10 @@ const boatSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    ownerContact: {
+            type: String,
+            required: true
+    },
     ime: {
         type: String,
         required: true

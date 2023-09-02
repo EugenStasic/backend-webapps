@@ -33,7 +33,8 @@ router.post('/create', jwtMiddleware, async (req, res) => {
             endDate,
             totalCost,
             note,
-            status
+            status,
+            renterContact: req.body.renterContact
         });
 
         await newBooking.save();
@@ -43,6 +44,21 @@ router.post('/create', jwtMiddleware, async (req, res) => {
             { $push: { dostupnost: { startDate, endDate, bookingId: newBooking._id } } },
             { new: true }
         );
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
+
+// ZA SVE GDJE JE KOR RENTER
+router.get('/renter', jwtMiddleware, async (req, res) => {
+    try {
+        const renterBookings = await Booking.find({ renter: req.userId }).populate('boat');
+        
+        renterBookings.forEach(booking => {
+            updateBookingStatus(booking);
+        });
+
+        res.status(200).send(renterBookings);
     } catch (error) {
         res.status(500).send({ error: error.message });
     }

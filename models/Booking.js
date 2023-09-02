@@ -11,6 +11,10 @@ const bookingSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    renterContact: {
+            type: String,
+            required: true
+    },
     boat: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Boat',
