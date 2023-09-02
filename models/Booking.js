@@ -35,7 +35,8 @@ const bookingSchema = new mongoose.Schema({
         type: String,
         enum: ['past', 'ongoing', 'upcoming'],
         default: 'upcoming'
-    }
+    },
+    isRated: { type: Boolean, default: false }
 });
 
 module.exports = mongoose.model('Booking', bookingSchema);
