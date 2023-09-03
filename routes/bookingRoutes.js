@@ -102,6 +102,12 @@ router.delete('/:id', jwtMiddleware, async (req, res) => {
         const booking = await Booking.findOneAndDelete({ _id: req.params.id, renter: req.userId });
         if (!booking) return res.status(404).send({ error: 'Booking not found' });
 
+         const boat = await Boat.findById(booking.boat);
+         if (boat) {
+             boat.dostupnost = boat.dostupnost.filter(d => d.bookingId.toString() !== booking._id.toString());
+             await boat.save();
+         }
+
         res.status(200).send({ message: 'Booking deleted' });
     } catch (error) {
         res.status(500).send({ error: error.message });
