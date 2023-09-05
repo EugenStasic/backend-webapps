@@ -16,7 +16,6 @@ router.post('/create', jwtMiddleware, async (req, res) => {
 
         const owner = boat.owner;
 
-        // Za odrediti status rezervacije
         const today = moment().startOf('day');
         const bookingStartDate = moment(startDate).startOf('day');
         let status = "upcoming";
@@ -99,8 +98,11 @@ router.patch('/:id', jwtMiddleware, async (req, res) => {
 // IZBRIŠI BOOKING
 router.delete('/:id', jwtMiddleware, async (req, res) => {
     try {
-        const booking = await Booking.findOneAndDelete({ _id: req.params.id, renter: req.userId });
+        const booking = await Booking.findById(req.params.id);
         if (!booking) return res.status(404).send({ error: 'Booking not found' });
+        if (booking.renter.toString() !== req.userId && booking.owner.toString() !== req.userId) {
+            return res.status(403).send({ error: 'You do not have permission to delete this booking' });
+        }
 
          const boat = await Boat.findById(booking.boat);
          if (boat) {
