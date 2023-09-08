@@ -12,15 +12,13 @@ const bookingRoutes = require('./routes/bookingRoutes');
 
 const app = express();
 
-// Middleware
 app.use(cors({
-    origin: 'http://localhost:8080', 
-    credentials: true 
+    origin: 'https://webapps-rentaboatfront-8665a18bc5ca.herokuapp.com',//'http://localhost:8080'
+       credentials: true 
 }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
-//Rute
 app.use('/users', userRoutes);
 app.use('/boats', boatRoutes);
 app.use('/search', filterRoutes);
@@ -28,11 +26,10 @@ app.use('/bookings', bookingRoutes);
 
 const dbUri = process.env.DATABASE_URL;
 
-//Baza
 mongoose
 .connect(dbUri, { useNewUrlParser: true, useUnifiedTopology: true, dbName: 'RentABoat' })
 .then(() => console.log("Connected to DB"))
 .catch((err) => console.log(err));
 
-const port = process.env.PORT;
+const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Server is running on port ${port}`));

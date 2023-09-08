@@ -58,6 +58,7 @@ const boatSchema = new mongoose.Schema({
         }
     }],
     slikePlovila: [{
+        data: Buffer,
         type: String
     }],
 });

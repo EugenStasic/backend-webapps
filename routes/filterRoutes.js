@@ -8,7 +8,7 @@ router.get('/boats', async (req, res) => {
         let query = {};
 
         if (Object.keys(req.query).length === 0) {
-            query.tip = "Gliser";
+            query.tip = "Svi Tipovi";
         } else {
             if (req.query.ime) {
                 query.ime = new RegExp(req.query.ime, 'i');
@@ -29,6 +29,10 @@ router.get('/boats', async (req, res) => {
             if (req.query.duljinaPlovilaMax) {
                 query.duljinaPlovila = { $lte: parseInt(req.query.duljinaPlovilaMax) };
             }
+
+            if (req.query.cijenaMax) {
+                query.cijenaPlovila = { $lte: parseInt(req.query.cijenaMax)};
+            }     
         }
 
         const boats = await Boat.find(query);
@@ -47,6 +51,14 @@ router.get('/unique-locations', async (req, res) => {
     }
 });
 
+router.get('/max-price', async (req, res) => {
+    try {
+        const maxPrice = await Boat.find().sort('-cijenaPlovila').limit(1).select('cijenaPlovila');
+        res.status(200).send(maxPrice[0]);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
 
 router.get('/max-motor-power', async (req, res) => {
     try {

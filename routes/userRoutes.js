@@ -41,7 +41,7 @@ router.post('/login', async (req, res) => {
     const tokenSecret = process.env.JWT_SECRET;  
     const token = jwt.sign({ userId: user._id }, tokenSecret, { expiresIn: '1h' });
 
-    res.cookie('jwtToken', token, { httpOnly: true, maxAge: 3600000, sameSite: 'lax' });
+    res.cookie('jwtToken', token, { httpOnly: true, maxAge: 3600000, sameSite: 'none', secure: true });
     res.json({ success: true, message: 'Uspješno prijavljen!', token: token });
 });
 
@@ -59,12 +59,8 @@ router.get('/me', jwtMiddleware, async (req, res) => {
 
 // ODJAVA
 router.get('/logout', (req, res) => {
-    res.clearCookie('jwtToken');
+    res.clearCookie('jwtToken', { httpOnly: true, sameSite: "none", secure: true });
     res.status(200).json({ message: "Logged out." });
-});
-
-router.get('/homepage', jwtMiddleware, (req, res) => {
-    res.send('<h1>DOBRODOŠLI</h1>');
 });
 
 // PROVJERA AUTENTIFIKACIJE

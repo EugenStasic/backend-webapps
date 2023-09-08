@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const path = require('path');
+const bucket = require('../gcstore');
+const uuid = require('uuid');
 const Boat = require('../models/Boat');
 const Booking = require('../models/Booking');
 const jwtMiddleware = require('../middleware/jwtmiddleware');
@@ -9,15 +10,37 @@ const upload = require('../middleware/multermiddleware');
 // IZRADI OGLAS
 router.post('/create', jwtMiddleware, upload.array('slikePlovila', 5), async (req, res) => {
     try {
-        let imagePaths = [];
-        req.files.forEach(file => {
-            let relativePath = path.normalize(file.path).replace('uploads/', '');
-            imagePaths.push(relativePath);
+        let imageURLs = [];
+
+        const uploadPromises = req.files.map(file => {
+            return new Promise((resolve, reject) => {
+                const filename = `${uuid.v4()}.jpeg`;
+                const blob = bucket.file(filename);
+                const blobStream = blob.createWriteStream({
+                    metadata: {
+                        contentType: file.mimetype
+                    }
+                });
+
+                blobStream.on('error', err => {
+                    reject(new Error(`Error uploading to GCS: ${err}`));
+                });
+
+                blobStream.on('finish', () => {
+                    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+                    imageURLs.push(publicUrl);
+                    resolve();
+                });
+
+                blobStream.end(file.buffer);
+            });
         });
+
+        await Promise.all(uploadPromises);
 
         const boat = new Boat({
             ...req.body,
-            slikePlovila: imagePaths,
+            slikePlovila: imageURLs,
             owner: req.userId,
             ownerContact: req.body.ownerContact
         });
@@ -28,6 +51,7 @@ router.post('/create', jwtMiddleware, upload.array('slikePlovila', 5), async (re
         res.status(400).send({ error: error.message });
     }
 });
+
 
 // SVA PLOVILA KORISNIKA
 router.get('/me', jwtMiddleware, async (req, res) => {
@@ -131,7 +155,7 @@ router.delete('/:id', jwtMiddleware, async (req, res) => {
     }
 });
 
-// UREDI SLIKE
+  // DODAVANJE SLIKA
 router.patch('/:id/upload', jwtMiddleware, upload.array('slikePlovila', 5), async (req, res) => {
     try {
         const boat = await Boat.findOne({ _id: req.params.id, owner: req.userId });
@@ -139,15 +163,37 @@ router.patch('/:id/upload', jwtMiddleware, upload.array('slikePlovila', 5), asyn
             return res.status(404).send({ error: 'Boat not found' });
         }
 
-        let imagePaths = [];
-        req.files.forEach(file => {
-            let relativePath = path.normalize(file.path).replace('uploads/', '');
-            imagePaths.push(relativePath);
+        let newImageURLs = [];
+
+        const uploadPromises = req.files.map(file => {
+            return new Promise((resolve, reject) => {
+                const filename = `${uuid.v4()}.jpeg`;
+                const blob = bucket.file(filename);
+                const blobStream = blob.createWriteStream({
+                    metadata: {
+                        contentType: file.mimetype
+                    }
+                });
+
+                blobStream.on('error', err => {
+                    reject(new Error(`Error uploading to GCS: ${err}`));
+                });
+
+                blobStream.on('finish', () => {
+                    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+                    newImageURLs.push(publicUrl);
+                    resolve();
+                });
+
+                blobStream.end(file.buffer);
+            });
         });
 
-        boat.slikePlovila = boat.slikePlovila.concat(imagePaths);
-        await boat.save();
+        await Promise.all(uploadPromises);
 
+        boat.slikePlovila = boat.slikePlovila.concat(newImageURLs); 
+
+        await boat.save();
         res.status(200).send(boat);
     } catch (error) {
         res.status(400).send({ error: error.message });
@@ -155,35 +201,46 @@ router.patch('/:id/upload', jwtMiddleware, upload.array('slikePlovila', 5), asyn
 });
 
 // DOHVACANJE SLIKE
-router.get('/slike/:imageName', (req, res) => {
+router.get('/images/:id/:index', async (req, res) => {
     try {
-        res.sendFile(path.join(__dirname, '../uploads/' + req.params.imageName));
+        const boat = await Boat.findById(req.params.id);
+        if (!boat || req.params.index >= boat.slikePlovila.length || req.params.index < 0) {
+            return res.status(404).send({ error: 'Image not found' });
+        }
+
+        const imageUrl = boat.slikePlovila[req.params.index];
+        res.redirect(imageUrl);
+
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
 });
 
 // BRISANJE SLIKE
-router.patch('/:id/remove-image/:index', jwtMiddleware, async (req, res) => {
+router.delete('/:id/remove-image/:index', jwtMiddleware, async (req, res) => {
     try {
-      const boat = await Boat.findOne({ _id: req.params.id, owner: req.userId });
-      if (!boat) {
-        return res.status(404).send({ error: 'Boat not found' });
-      }
-      
-      const index = req.params.index;
-      if (index < 0 || index >= boat.slikePlovila.length) {
-        return res.status(400).send({ error: 'Invalid index' });
-      }
-  
-      boat.slikePlovila.splice(index, 1);
-      await boat.save();
-  
-      res.status(200).send(boat);
+        const boat = await Boat.findOne({ _id: req.params.id, owner: req.userId });
+
+        if (!boat) {
+            return res.status(404).send({ error: 'Boat not found' });
+        }
+        
+        const index = parseInt(req.params.index);
+
+        if (isNaN(index) || index < 0 || index >= boat.slikePlovila.length) {
+            return res.status(400).send({ error: 'Invalid index' });
+        }
+        
+        boat.slikePlovila.splice(index, 1);
+        await boat.save();
+
+        res.status(200).send(boat);
     } catch (error) {
-      res.status(400).send({ error: error.message });
+        console.error('Overall route error:', error);
+        res.status(400).send({ error: error.message });
     }
-  });
+});
+
 
 // DOSTUPNOST
 router.get('/:id/unavailable-dates', async (req, res) => {
